@@ -1,47 +1,27 @@
+#include "mem.h"
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 
-typedef void (*write_t)(int dst, void* src, int size);
-typedef void (*read_t)(void* dst, int src, int size);
-
-typedef struct {
-    write_t write;
-    read_t read;
-} memory_access_t;
-
-#define MEM_SIZE1 1024
-int g_memory1[MEM_SIZE1];
-
-void mem1_write(int dst, void* src, int size)
-{
-    memcpy(g_memory1 + dst, src, size);
-}
-
-void mem1_read(void* dst, int src, int size)
-{
-    memcpy(dst, g_memory1 + src, size);
-}
-
-bool test(memory_access_t* mem_access)
+bool test(memory_ctx_t* mem_ctx)
 {
     uint32_t offset = 0x10;
     uint32_t input = 0xDEADBEEF;
     uint32_t output = 0;
-    mem_access->write(offset, &input, sizeof(input));
-    mem_access->read(&output, offset, sizeof(output));
+    mem_ctx->write(mem_ctx, offset, &input, sizeof(input));
+    mem_ctx->read(mem_ctx, &output, offset, sizeof(output));
     return output == input;
 }
 
 int main()
 {
-    memory_access_t mem_access = {
-        .write = mem1_write,
-        .read = mem1_read
-    };
+    memory_ctx_t mem_ctx;
+    mem1_init(&mem_ctx, 1024);
 
-    bool success = test(&mem_access);
+    bool success = test(&mem_ctx);
     printf("%s\n", success ? "success" : "fail");
+
+    mem_ctx.close(&mem_ctx);
 }
